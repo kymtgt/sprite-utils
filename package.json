@@ -1,0 +1,10 @@
+{
+  "name": "stripe-utils",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "<github@tsugu,to>",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.0"
+  }
+}

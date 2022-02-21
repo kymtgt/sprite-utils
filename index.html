@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+  <style>
+    .image {
+      background: #eee no-repeat;
+      overflow: hidden;
+      position: relative;
+      outline: 1px solid #999;
+    }
+    input[type="number"] {
+      width:  3em;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <input type="file" @change="onImageUploaded">
+    <div>
+      フレーム数： <input type="number" v-model="frameNumber"><br>
+      フレームレート： <input type="number" v-model="frameRate"><br>
+      サイズ：<select v-model="imageSize" @change="onChangeSize"><option value="320">320</option><option value="400">400</option><option value="512">512</option></select>
+    </div>
+
+    <div class="image" :style="{width: imageSize + 'px', height: imageSize + 'px'}">
+      <img :src="imageSrc" :style="styleObject">
+    </div>
+
+    <div>
+      <input type="range" min=1 :max="frameNumber" @change="onChangeRange" v-model="currentFrame"> {{ currentFrame }}
+    </div>
+
+    <div>
+      <button type="button" v-show="!isPlaying" @click="playAnimate"> Play </button>
+      <button type="button" v-show="isPlaying" @click="pauseAnimate"> Pause </button>
+    </div>
+  </div>
+<script>
+var app = new Vue({
+  el: '#app',
+  data: {
+    isPlaying: false,
+    currentFrame: 1,
+    currentStep: {
+      x: 0,
+      y: 0
+    },
+    frameNumber: 0,
+    grid: {
+      h: 0,
+      v: 0
+    },
+    imageSrc: "",
+    imageWidth: 0,
+    imageHeight: 0,
+    styleObject: {
+      backgroundImage: '',
+      transform: ''
+    },
+    imageSize: 320,
+    frameRate: 5,
+  },
+  methods: {
+    playAnimate: function() {
+      this.isPlaying = true;
+      window.setTimeout( ()=> {
+        this.animateImage();
+      }, (1000 / this.frameRate));
+    },
+    pauseAnimate: function() {
+      this.isPlaying = false;
+    },
+    onChangeSize: function() {
+      this.setGrid();
+      this.resetStep();
+      this.renderImage();
+    },
+    onChangeRange: function() {
+      this.pauseAnimate();
+      this.currentStep = {
+        x: (this.currentFrame - 1) % this.grid.h,
+        y: Math.floor((this.currentFrame - 1) / this.grid.h)
+      }
+      this.renderImage();
+    },
+    onImageUploaded: function(e) {
+      this.resetStep();
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      const image = new Image();
+      reader.onload = ()=> {
+        image.src = reader.result;
+        image.onload = ()=> {
+          this.imageSrc = image.src;
+          this.imageWidth = image.naturalWidth;
+          this.imageHeight = image.naturalHeight;
+          this.setGrid()
+          this.renderImage();
+        }
+      };
+      reader.readAsDataURL(file);
+    },
+
+    setGrid: function() {
+      this.grid = {
+        h: this.imageWidth / this.imageSize,
+        v: this.imageHeight / this.imageSize
+      };
+    },
+    resetStep: function() {
+      this.currentStep = {x:0, y:0};
+      this.currentFrame = 1;
+    },
+    renderImage: function() {
+      const imagePos = {
+        x: this.imageSize * this.currentStep.x * (-1),
+        y: this.imageSize * this.currentStep.y * (-1)
+      }
+      this.styleObject.transform = "translate(" + imagePos.x + "px, "+ imagePos.y + "px)";
+    },
+
+    animateImage: function() {
+      if( !this.isPlaying ){return false};
+
+      if( this.currentFrame < this.frameNumber) {
+        if( this.currentStep.x < this.grid.h - 1 ) {
+          this.currentStep.x += 1;
+        } else {
+          this.currentStep.y += 1;
+          this.currentStep.x = 0;
+        }
+        this.currentFrame += 1;
+      } else {
+        this.resetStep();
+      }
+      this.renderImage();
+
+      window.setTimeout( ()=> {
+        this.animateImage();
+      }, (1000 / this.frameRate));
+    },
+
+  }
+})
+</script>
+</body>
+</html>
